@@ -13,7 +13,10 @@ install nodejs >= 20
 2. Start the app
 
    ```bash
-   npx expo start
+   - npx expo prebuild ( ios + android) 
+      + npx expo prebuild --platform android
+      + npx expo prebuild --platform ios
+   - npx expo run:android
    ```
 
 In the output, you'll find options to open the app in a

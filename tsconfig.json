@@ -14,6 +14,8 @@
     "**/*.ts",
     "**/*.tsx",
     "App.js",
-    "components/AppHeader.js"
+    "components/AppHeader.js",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
   ]
 }

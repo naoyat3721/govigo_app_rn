@@ -6,6 +6,8 @@ import AppFooter from '../../components/AppFooter';
 import AppHeader from '../../components/AppHeader';
 import CustomButton from '../../components/CustomButton';
 import { useAuth } from '../../contexts/AuthContext';
+import { getFCMToken, requestUserPermission } from '../../services/notificationService';
+
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('naoyat3721@gmail.com');
@@ -20,6 +22,15 @@ export default function LoginScreen() {
   
     // Check authentication status
   useEffect(() => {
+    const handleNotifications = async () => {
+      await requestUserPermission();
+      const fcmToken = await getFCMToken();
+      if (fcmToken) {
+        console.log('FCM Token:', fcmToken);
+      }
+    };
+
+    handleNotifications();
     if (isAuthenticated) {
       // Redirect to login if not authenticated
       router.replace('/screens/HomeScreen');
@@ -53,6 +64,19 @@ export default function LoginScreen() {
     }
   };
 
+  const sendTestNotification = () => {
+    console.log('Simulating sending a push notification...');
+    const message = {
+      notification: {
+        title: 'Test Notification',
+        body: 'This is a test push message!',
+      },
+      token: 'YOUR_DEVICE_FCM_TOKEN',
+    };
+    console.log('Sample message payload:', message);
+    Alert.alert('Test Notification', 'Check the console for the sample message payload.');
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <AppHeader title="Login" />
@@ -76,7 +100,11 @@ export default function LoginScreen() {
         {isLoading ? (
           <ActivityIndicator size="large" color="#376439" style={{ marginTop: 20 }} />
         ) : (
-          <CustomButton title="Login" onPress={submitLogin} />
+          <>
+            <CustomButton title="Login" onPress={submitLogin} />
+            <View style={{ marginTop: 10 }} />
+            <CustomButton title="Send Test Notification" onPress={sendTestNotification} />
+          </>
         )}
       </View>
       <AppFooter />
