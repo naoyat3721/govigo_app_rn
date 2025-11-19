@@ -14,6 +14,7 @@ import {
   View
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { useSocket } from '../contexts/SocketContext';
 
 // Text-based icon component
 const TextIcon = ({ name, size = 20, color = '#000', style = {} }) => {
@@ -27,6 +28,8 @@ const TextIcon = ({ name, size = 20, color = '#000', style = {} }) => {
     'document-text-outline': '📄',
     'person-outline': '👤',
     'settings-outline': '⚙️',
+    'arrow-back-outline': '←',
+    'notifications-outline': '🔔',
   };
 
   return (
@@ -36,8 +39,9 @@ const TextIcon = ({ name, size = 20, color = '#000', style = {} }) => {
   );
 };
 
-const AppHeader = ({ title, showMenu = true }) => {
+const AppHeader = ({ title, showMenu = true, showBackButton = false, onBack, backRoute }) => {
   const { isAuthenticated, loading: authLoading, logout } = useAuth();
+  const { hasNewMessage, clearNewMessage } = useSocket();
 
   const router = useRouter();
   const route = useRoute();
@@ -103,12 +107,38 @@ const AppHeader = ({ title, showMenu = true }) => {
     await logout();
     router.replace('/screens/LoginScreen');
   };
+  
+  // Xử lý khi người dùng bấm nút back
+  const handleBack = () => {
+    // Nếu có hàm onBack được truyền vào thì gọi nó
+    if (onBack) {
+      onBack();
+    } 
+    // Nếu có backRoute được truyền vào thì điều hướng tới đó
+    else if (backRoute) {
+      // Sử dụng replace thay vì push để làm mới trang khi quay lại
+      router.replace(backRoute);
+    } 
+    // Mặc định là quay về trang chủ
+    else {
+      router.replace('/screens/HomeScreen');
+    }
+  };
 
   return (
     <View style={styles.headerContainer}>
       <StatusBar backgroundColor="#376439" barStyle="light-content" />
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>{title}</Text>
+        {showBackButton ? (
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={handleBack}
+          >
+            <TextIcon name="arrow-back-outline" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
+        ) : (
+          <Text style={styles.headerTitle}>{title}</Text>
+        )}
         <View style={styles.logoContainer}>
           <Image
             source={require('../assets/images/logo_short.png')}
@@ -117,6 +147,20 @@ const AppHeader = ({ title, showMenu = true }) => {
         </View>
         {showMenu && (
           <View style={styles.menuContainer}>
+            {isAuthenticated && (
+              <TouchableOpacity 
+                style={styles.notificationButton}
+                onPress={() => {
+                  clearNewMessage();
+                  navigateToMessage();
+                }}
+              >
+                <View style={styles.notificationIconContainer}>
+                  <TextIcon name="notifications-outline" size={22} color="#FFFFFF" />
+                  {hasNewMessage && <View style={styles.notificationDot} />}
+                </View>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity 
               style={styles.menuButton}
               onPress={toggleMenu}
@@ -286,6 +330,10 @@ const styles = StyleSheet.create({
     width: '30%',
     zIndex: 1,
   },
+  backButton: {
+    padding: 8,
+    zIndex: 1,
+  },
   logoContainer: {
     position: 'absolute',
     left: 0,
@@ -297,11 +345,28 @@ const styles = StyleSheet.create({
     zIndex: 0,
   },
   menuContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     width: '30%',
-    alignItems: 'flex-end',
     zIndex: 1,
+  },
+  notificationButton: {
+    marginRight: 12,
+  },
+  notificationIconContainer: {
+    position: 'relative',
+  },
+  notificationDot: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#FF4040',
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
   },
   headerImage: {
     width: 120,

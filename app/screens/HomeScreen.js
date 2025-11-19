@@ -6,7 +6,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import AppHeader from '../../components/AppHeader';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSocket } from '../../contexts/SocketContext';
 import { getToken } from '../../services/authService';
+import { getFCMToken, requestUserPermission } from '../../services/notificationService';
 
 export default function HomeScreen() {
   const [isLoading, setIsLoading] = useState(true);
@@ -15,6 +17,9 @@ export default function HomeScreen() {
   const webviewRef = useRef(null);
   const router = useRouter();
   const { isAuthenticated, user, loading: authLoading } = useAuth();
+  const [isAutoLogin, setIsAutoLogin] = useState(true);
+  const { socket, connected } = useSocket();
+
   
   // Get WEB_URL from environment variables
   const WEB_URL = Constants.expoConfig?.extra?.webUrl;
@@ -28,8 +33,20 @@ export default function HomeScreen() {
         // Redirect to login if not authenticated
         router.replace('/screens/LoginScreen');
       } else {
+        console.log('get fcm token');
         // Prepare webview with autologin
-        prepareWebView();
+        const handleNotifications = async () => {
+          await requestUserPermission();
+          const fcmToken = await getFCMToken();
+          if (fcmToken) {
+            console.log('FCM Token:', fcmToken);
+          }
+        };
+
+        handleNotifications();
+        if (isAutoLogin) {
+          prepareWebView();
+        }
       }
     }
   }, [isAuthenticated, authLoading]);
@@ -40,6 +57,9 @@ export default function HomeScreen() {
       
       // Similar to Flutter implementation, try to get token and set up autologin
       const token = await getToken();
+      if (!token) {
+        throw new Error('No auth token found');
+      }
       const autoLoginUrl = `${API_URL}/autologin.php`;
       
       // Set URL and headers
@@ -53,6 +73,7 @@ export default function HomeScreen() {
       
       console.log('WebView configured with autologin URL:', autoLoginUrl);
       console.log('Headers:', headers);
+      setIsLoading(false);
       
     } catch (error) {
       console.error('Error preparing WebView:', error);
