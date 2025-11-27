@@ -54,7 +54,7 @@ axiosClient.interceptors.request.use(async (config) => {
     console.log('Sending request...');
   } catch (error) {
     // Only log errors to console without throwing
-    console.error('❌ Error in request interceptor:', error);
+    console.log('❌ Error in request interceptor:', error);
   }
   return config;
 });
@@ -79,18 +79,18 @@ axiosClient.interceptors.response.use(
       ? new URL(error.config.url, error.config.baseURL || API_URL).toString()
       : 'Unknown URL';
 
-    console.error(`🔗 Request URL: ${fullUrl}`);
-    console.error(`🔧 Request Method: ${error?.config?.method?.toUpperCase() || 'Unknown'}`);
+    console.log(`🔗 Request URL: ${fullUrl}`);
+    console.log(`🔧 Request Method: ${error?.config?.method?.toUpperCase() || 'Unknown'}`);
     
     if (error?.config?.data) {
       try {
-        console.error('📦 Request Data:');
+        console.log('📦 Request Data:');
         const parsedData = typeof error.config.data === 'string' 
           ? JSON.parse(error.config.data) 
           : error.config.data;
-        console.error(JSON.stringify(parsedData, null, 2));
+        console.log(JSON.stringify(parsedData, null, 2));
       } catch (e) {
-        console.error('📦 Request Data (raw):', error.config.data);
+        console.log('📦 Request Data (raw):', error.config.data);
       }
     }
     
@@ -109,8 +109,8 @@ axiosClient.interceptors.response.use(
       });
     } else if (error.request) {
       // Request was made but no response received (network error, timeout, etc.)
-      console.error('⚠️ No response received from server');
-      console.error('⚠️ Possible causes: Network error, timeout, or server is down');
+      console.log('⚠️ No response received from server');
+      console.log('⚠️ Possible causes: Network error, timeout, or server is down');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       
       return Promise.reject({
@@ -122,7 +122,7 @@ axiosClient.interceptors.response.use(
       });
     } else {
       // Something happened in setting up the request
-      console.error(`⚠️ Error message: ${error.message}`);
+      console.log(`⚠️ Error message: ${error.message}`);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       
       return Promise.reject({

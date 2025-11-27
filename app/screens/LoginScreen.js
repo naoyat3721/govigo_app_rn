@@ -32,8 +32,8 @@ export default function LoginScreen() {
 
     handleNotifications();
     if (isAuthenticated) {
-      // Redirect to login if not authenticated
-      router.replace('/screens/HomeScreen');
+      // Redirect to main screen if authenticated
+      router.replace('/screens/MainScreen');
     }
   }, [isAuthenticated, authLoading]);
 
@@ -54,7 +54,7 @@ export default function LoginScreen() {
       setLocalLoading(false);
       
       if (success) {
-        router.replace('/screens/HomeScreen');
+        router.replace('/screens/MainScreen');
       } else {
         Alert.alert('Login fail', 'Wrong email or password');
       }

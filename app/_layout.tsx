@@ -8,6 +8,7 @@ import { Alert, PermissionsAndroid, Platform } from "react-native";
 import 'react-native-reanimated';
 import { AuthProvider } from "../contexts/AuthContext";
 import { SocketProvider } from "../contexts/SocketContext";
+import { WebViewProvider } from "../contexts/WebViewContext";
 
 
 export const unstable_settings = {
@@ -126,19 +127,23 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>
         <SocketProvider>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              animation: 'slide_from_right'
-            }}
-          >
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="screens/HomeScreen" options={{ headerShown: false }} />
-        <Stack.Screen name="screens/LoginScreen" options={{ headerShown: false }} />
-        <Stack.Screen name="screens/MessageScreen" options={{ headerShown: false }} />
-        <Stack.Screen name="screens/DetailMessageScreen" options={{ headerShown: false }} />
-      </Stack>
-      <StatusBar style="auto" />
+          <WebViewProvider>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                animation: 'slide_from_right'
+              }}
+            >
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="screens/HomeScreen" options={{ headerShown: false }} />
+          <Stack.Screen name="screens/LoginScreen" options={{ headerShown: false }} />
+          <Stack.Screen name="screens/SearchScreen" options={{ headerShown: false }} />
+          <Stack.Screen name="screens/MyAccountScreen" options={{ headerShown: false }} />
+          <Stack.Screen name="screens/MessageScreen" options={{ headerShown: false }} />
+          <Stack.Screen name="screens/DetailMessageScreen" options={{ headerShown: false }} />
+        </Stack>
+        <StatusBar style="auto" />
+          </WebViewProvider>
         </SocketProvider>
       </AuthProvider>
     </ThemeProvider>

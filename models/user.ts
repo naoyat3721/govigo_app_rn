@@ -3,6 +3,8 @@ export interface User {
   name?: string;
   email: string;
   profilePicture?: string;
+  birthDate?: string;
+  sex?: string;
 }
 
 export interface AuthResponse {
@@ -13,4 +15,6 @@ export interface AuthResponse {
   name?: string;
   mail?: string;
   profile_picture?: string;
+  birth_date?: string;
+  sex?: string;
 }
