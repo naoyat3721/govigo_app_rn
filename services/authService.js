@@ -53,6 +53,39 @@ const storeToken = async (token) => {
   }
 };
 
+// Store session info (session_id, session_name, cookie_domain)
+const storeSessionInfo = async (sessionInfo) => {
+  try {
+    await SecureStore.setItemAsync('session_info', JSON.stringify(sessionInfo));
+  } catch (error) {
+    console.error('Error storing session info', error);
+    throw error;
+  }
+};
+
+// Get session info
+export const getSessionInfo = async () => {
+  try {
+    const sessionInfoStr = await SecureStore.getItemAsync('session_info');
+    if (!sessionInfoStr) {
+      return null;
+    }
+    return JSON.parse(sessionInfoStr);
+  } catch (error) {
+    console.error('Error getting session info', error);
+    return null;
+  }
+};
+
+// Remove session info
+const removeSessionInfo = async () => {
+  try {
+    await SecureStore.deleteItemAsync('session_info');
+  } catch (error) {
+    console.error('Error removing session info', error);
+  }
+};
+
 // Get authentication token
 export const getToken = async () => {
   try {
@@ -98,6 +131,7 @@ const redirectToLogin = () => {
 export const removeToken = async () => {
   try {
     await SecureStore.deleteItemAsync('auth_token');
+    await removeSessionInfo(); // Also remove session info
     return true;
   } catch (error) {
     console.error('Error removing auth token', error);
@@ -110,9 +144,17 @@ export async function login(email, password) {
   console.log('authService login called with:', email, password);
   try {
     const response = await authApi.login(email, password);
-    console.log('API response:', response.data.token);
+    console.log('API response:', response);
     if (response && response.success) {
+      // Store token
       await storeToken(response.data.token);
+      
+      // Store session info if available
+      if (response.data.session) {
+        await storeSessionInfo(response.data.session);
+        console.log('Session info stored:', response.data.session);
+      }
+      
       return true;
     }
     return false;

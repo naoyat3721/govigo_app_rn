@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppHeader from '../../components/AppHeader';
+import BottomTabBar from '../../components/BottomTabBar';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSocket } from '../../contexts/SocketContext';
 import messageService from '../../services/messageService';
@@ -176,7 +177,7 @@ export default function MessageScreen() {
         </View>
         
         <View style={styles.roomInfo}>
-          <Text style={styles.roomName}>{room.golf_club_name} { room.reserve_id }</Text>
+          <Text style={styles.roomName}>{room.golf_club_name}</Text>
           <Text style={styles.planName} numberOfLines={1} ellipsizeMode="tail">
             {room.plan_name}
           </Text>
@@ -222,11 +223,11 @@ export default function MessageScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader 
         title="Messages" 
         showBackButton={true}
-        backRoute="/screens/HomeScreen" 
+        backRoute="/screens/MainScreen" 
       />  
       
       {isLoading ? (
@@ -253,6 +254,8 @@ export default function MessageScreen() {
           }
         />
       )}
+      
+      <BottomTabBar currentScreen="main" currentTab="home" />
     </SafeAreaView>
   );
 }

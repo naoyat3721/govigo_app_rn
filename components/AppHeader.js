@@ -1,7 +1,9 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRoute } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   Animated,
   Dimensions,
   Image,
@@ -15,6 +17,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
+import { useWebView } from '../contexts/WebViewContext';
 
 // Text-based icon component
 const TextIcon = ({ name, size = 20, color = '#000', style = {} }) => {
@@ -29,7 +32,8 @@ const TextIcon = ({ name, size = 20, color = '#000', style = {} }) => {
     'person-outline': '👤',
     'settings-outline': '⚙️',
     'arrow-back-outline': '←',
-    'notifications-outline': '🔔',
+    'notifications-outline': '�',
+    'chatbubble-outline': '�',
   };
 
   return (
@@ -42,19 +46,26 @@ const TextIcon = ({ name, size = 20, color = '#000', style = {} }) => {
 const AppHeader = ({ title, showMenu = true, showBackButton = false, onBack, backRoute }) => {
   const { isAuthenticated, loading: authLoading, logout } = useAuth();
   const { hasNewMessage, clearNewMessage } = useSocket();
+  const { currentLanguage, changeLanguage, languages, webViewUrl } = useWebView();
 
   const router = useRouter();
   const route = useRoute();
   const currentScreen = route.name;
-  const [menuVisible, setMenuVisible] = useState(false);
+  const [languageMenuVisible, setLanguageMenuVisible] = useState(false);
+  const [mainMenuVisible, setMainMenuVisible] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const menuFadeAnim = useRef(new Animated.Value(0)).current;
 
-  const toggleMenu = () => {
-    setMenuVisible(!menuVisible);
+  const toggleLanguageMenu = () => {
+    setLanguageMenuVisible(!languageMenuVisible);
+  };
+
+  const toggleMainMenu = () => {
+    setMainMenuVisible(!mainMenuVisible);
   };
 
   useEffect(() => {
-    if (menuVisible) {
+    if (languageMenuVisible) {
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 200,
@@ -67,45 +78,82 @@ const AppHeader = ({ title, showMenu = true, showBackButton = false, onBack, bac
         useNativeDriver: true
       }).start();
     }
-  }, [menuVisible, fadeAnim]);
+  }, [languageMenuVisible, fadeAnim]);
+
+  useEffect(() => {
+    if (mainMenuVisible) {
+      Animated.timing(menuFadeAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true
+      }).start();
+    } else {
+      Animated.timing(menuFadeAnim, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true
+      }).start();
+    }
+  }, [mainMenuVisible, menuFadeAnim]);
   
   // Close menu when route changes
   useEffect(() => {
-    setMenuVisible(false);
+    setLanguageMenuVisible(false);
   }, [route]);
 
-  const navigateToHome = () => {
-    setMenuVisible(false);
-    router.push('/screens/HomeScreen');
+  const handleLanguageSelect = (language) => {
+    changeLanguage(language.code);
+    setLanguageMenuVisible(false);
   };
 
-  const navigateToMessage = () => {
-    setMenuVisible(false);
-    router.push('/screens/MessageScreen');
-  }
+  const menuItems = [
+    { label: 'Golf course reservations', path: '/golf_club_search.php', tab: 'search' },
+    { label: 'Golf fees', path: '/golf_club_price_list.php' },
+    { label: 'Transfer fee', path: '/shuttle_prices.php' },
+    { label: 'Tour application', path: '/apply_golf_tour.php' },
+    { label: 'News', path: '/#news' },
+    { label: 'Member information', path: '/member/profile_confirmation.php', tab: 'account' },
+    { label: 'Favorite golf course', path: '/golf_club_price_list.php?favoriteFlag=1', tab: 'favorites' },
+    { label: 'Golf course reservation history', path: '/member/reserve_history.php', tab: 'booking' },
+    { label: 'Contact', path: '/contact.php' }
+  ];
 
-  const navigateToLogin = () => {
-    setMenuVisible(false);
-    router.push('/screens/LoginScreen');
+  const handleMenuItemClick = (item) => {
+    setMainMenuVisible(false);
+    
+    // If menu item has a corresponding tab, use tab navigation
+    if (item.tab) {
+      router.replace({ 
+        pathname: '/screens/MainScreen', 
+        params: { tab: item.tab } 
+      });
+    } else {
+      // Otherwise use custom URL
+      const fullUrl = `${webViewUrl}${item.path}`;
+      router.replace({ 
+        pathname: '/screens/MainScreen', 
+        params: { url: fullUrl } 
+      });
+    }
   };
 
-  
-  const navigateToProfile = () => {
-    setMenuVisible(false);
-    alert('Profile screen is coming soon!');
-    // Would navigate to Profile screen if it existed
-  };
-  
-  const navigateToSettings = () => {
-    setMenuVisible(false);
-    alert('Settings screen is coming soon!');
-    // Would navigate to Settings screen if it existed
-  };
-  
-  const handleLogout = async () => {
-    setMenuVisible(false);
-    await logout();
-    router.replace('/screens/LoginScreen');
+  const handleLogout = () => {
+    setMainMenuVisible(false);
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Logout', 
+          style: 'destructive',
+          onPress: () => {
+            logout();
+            router.replace('/screens/LoginScreen');
+          }
+        }
+      ]
+    );
   };
   
   // Xử lý khi người dùng bấm nút back
@@ -129,61 +177,60 @@ const AppHeader = ({ title, showMenu = true, showBackButton = false, onBack, bac
     <View style={styles.headerContainer}>
       <StatusBar backgroundColor="#376439" barStyle="light-content" />
       <View style={styles.header}>
-        {showBackButton ? (
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={handleBack}
-          >
-            <TextIcon name="arrow-back-outline" size={22} color="#FFFFFF" />
-          </TouchableOpacity>
-        ) : (
-          <Text style={styles.headerTitle}>{title}</Text>
-        )}
-        <View style={styles.logoContainer}>
+        <View style={styles.headerTitle}>
           <Image
-            source={require('../assets/images/logo_short.png')}
+            source={require('../assets/images/main-logo.png')}
             style={styles.headerImage}
           />
         </View>
         {showMenu && (
           <View style={styles.menuContainer}>
             {isAuthenticated && (
-              <TouchableOpacity 
-                style={styles.notificationButton}
-                onPress={() => {
-                  clearNewMessage();
-                  navigateToMessage();
-                }}
-              >
-                <View style={styles.notificationIconContainer}>
-                  <TextIcon name="notifications-outline" size={22} color="#FFFFFF" />
-                  {hasNewMessage && <View style={styles.notificationDot} />}
-                </View>
-              </TouchableOpacity>
+              <>
+                <TouchableOpacity 
+                  style={styles.notificationButton}
+                  onPress={() => {
+                    clearNewMessage();
+                    router.push('/screens/MessageScreen');
+                  }}
+                >
+                  <View style={styles.notificationIconContainer}>
+                    <Ionicons name="chatbubble-outline" size={22} color="#FFFFFF" />
+                    {hasNewMessage && <View style={styles.notificationDot} />}
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.menuButton}
+                  onPress={toggleMainMenu}
+                >
+                  <Ionicons name="menu-outline" size={28} color="#FFFFFF" />
+                </TouchableOpacity>
+              </>
             )}
-            <TouchableOpacity 
-              style={styles.menuButton}
-              onPress={toggleMenu}
+            {/* <TouchableOpacity 
+              style={styles.languageButton}
+              onPress={toggleLanguageMenu}
             >
-              <TextIcon name="menu-outline" size={20} color="#FFFFFF" />
-              <Text style={styles.menuButtonText}>Menu</Text>
+              <Text style={styles.languageButtonText}>
+                {currentLanguage.toUpperCase()}
+              </Text>
               <TextIcon 
-                name={menuVisible ? "chevron-up-outline" : "chevron-down-outline"} 
+                name={languageMenuVisible ? "chevron-up-outline" : "chevron-down-outline"} 
                 size={16} 
                 color="#FFFFFF" 
                 style={styles.chevron} 
               />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
             
             <Modal
               transparent={true}
-              visible={menuVisible}
+              visible={languageMenuVisible}
               animationType="fade"
-              onRequestClose={() => setMenuVisible(false)}
+              onRequestClose={() => setLanguageMenuVisible(false)}
             >
               <Pressable 
                 style={styles.modalOverlay} 
-                onPress={() => setMenuVisible(false)}
+                onPress={() => setLanguageMenuVisible(false)}
               >
                 <Animated.View 
                   style={[
@@ -194,105 +241,83 @@ const AppHeader = ({ title, showMenu = true, showBackButton = false, onBack, bac
                       outputRange: [-20, 0]
                     })}] }
                   ]}
-                  // This prevents touches on the menu from closing the modal
                   onStartShouldSetResponder={() => true}
                   onTouchEnd={(e) => e.stopPropagation()}
                 >
-                  {isAuthenticated ? (
-                    <>
-                      <TouchableOpacity 
-                        style={[
-                          styles.dropdownItem, 
-                          currentScreen === 'Home' && styles.activeDropdownItem
-                        ]} 
-                        onPress={navigateToHome}
-                      >
-                        <TextIcon 
-                          name="home-outline" 
-                          size={20} 
-                          color={currentScreen === 'Home' ? '#376439' : '#555'} 
-                        />
-                        <Text style={[
-                          styles.dropdownItemText,
-                          currentScreen === 'Home' && styles.activeItemText
-                        ]}>Home</Text>
-                      </TouchableOpacity>
-                      
-                      <View style={styles.menuSeparator}>
-                        <Text style={styles.menuSeparatorText}>User</Text>
-                      </View>
-                      
-                      <TouchableOpacity 
-                        style={styles.dropdownItem} 
-                        onPress={navigateToProfile}
-                      >
-                        <TextIcon 
-                          name="person-outline" 
-                          size={20} 
-                          color="#555" 
-                        />
-                        <Text style={styles.dropdownItemText}>Profile</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity 
-                        style={styles.dropdownItem} 
-                        onPress={navigateToMessage}
-                      >
-                        <TextIcon 
-                          name="document-text-outline" 
-                          size={20} 
-                          color="#555" 
-                        />
-                        <Text style={styles.dropdownItemText}>Message</Text>
-                      </TouchableOpacity>
-                      
-                      <TouchableOpacity 
-                        style={styles.dropdownItem} 
-                        onPress={navigateToSettings}
-                      >
-                        <TextIcon 
-                          name="settings-outline" 
-                          size={20} 
-                          color="#555" 
-                        />
-                        <Text style={styles.dropdownItemText}>Settings</Text>
-                      </TouchableOpacity>
-                      
-                      <View style={styles.menuSeparator}>
-                        <Text style={styles.menuSeparatorText}>Account</Text>
-                      </View>
-                      
-                      <TouchableOpacity 
-                        style={styles.dropdownItem} 
-                        onPress={handleLogout}
-                      >
-                        <TextIcon 
-                          name="log-in-outline" 
-                          size={20} 
-                          color="#555" 
-                        />
-                        <Text style={styles.dropdownItemText}>Logout</Text>
-                      </TouchableOpacity>
-                    </>
-                  ) : (
+                  {languages.map((language) => (
                     <TouchableOpacity 
+                      key={language.code}
                       style={[
                         styles.dropdownItem, 
-                        currentScreen === 'Login' && styles.activeDropdownItem
+                        currentLanguage === language.code && styles.activeDropdownItem
                       ]} 
-                      onPress={navigateToLogin}
+                      onPress={() => handleLanguageSelect(language)}
                     >
-                      <TextIcon 
-                        name="log-in-outline" 
-                        size={20} 
-                        color={currentScreen === 'Login' ? '#376439' : '#555'} 
-                      />
                       <Text style={[
-                        styles.dropdownItemText,
-                        currentScreen === 'Login' && styles.activeItemText
-                      ]}>Login</Text>
+                        styles.languageItemText,
+                        currentLanguage === language.code && styles.activeItemText
+                      ]}>
+                        {language.label}
+                      </Text>
+                      {currentLanguage === language.code && (
+                        <Text style={styles.checkmark}>✓</Text>
+                      )}
                     </TouchableOpacity>
-                  )}
+                  ))}
+                </Animated.View>
+              </Pressable>
+            </Modal>
+
+            {/* Main Navigation Menu */}
+            <Modal
+              transparent={true}
+              visible={mainMenuVisible}
+              animationType="fade"
+              onRequestClose={() => setMainMenuVisible(false)}
+            >
+              <Pressable 
+                style={styles.modalOverlay} 
+                onPress={() => setMainMenuVisible(false)}
+              >
+                <Animated.View 
+                  style={[
+                    styles.mainMenu,
+                    { opacity: menuFadeAnim },
+                    { transform: [{ translateX: menuFadeAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [300, 0]
+                    })}] }
+                  ]}
+                  onStartShouldSetResponder={() => true}
+                  onTouchEnd={(e) => e.stopPropagation()}
+                >
+                  <View style={styles.mainMenuHeader}>
+                    <Text style={styles.mainMenuTitle}>Menu</Text>
+                    <TouchableOpacity onPress={() => setMainMenuVisible(false)}>
+                      <Ionicons name="close-outline" size={28} color="#FFFFFF" />
+                    </TouchableOpacity>
+                  </View>
+                  
+                  {menuItems.map((item, index) => (
+                    <TouchableOpacity 
+                      key={index}
+                      style={styles.mainMenuItem} 
+                      onPress={() => handleMenuItemClick(item)}
+                    >
+                      <Text style={styles.mainMenuItemText}>{item.label}</Text>
+                      <Ionicons name="chevron-forward-outline" size={20} color="#FFFFFF" />
+                    </TouchableOpacity>
+                  ))}
+                  
+                  <View style={styles.menuSeparator} />
+                  
+                  <TouchableOpacity 
+                    style={[styles.mainMenuItem, styles.logoutMenuItem]} 
+                    onPress={handleLogout}
+                  >
+                    <Text style={styles.logoutText}>Logout</Text>
+                    <Ionicons name="log-out-outline" size={20} color="#FFD700" />
+                  </TouchableOpacity>
                 </Animated.View>
               </Pressable>
             </Modal>
@@ -373,18 +398,20 @@ const styles = StyleSheet.create({
     height: 40,
     resizeMode: 'contain',
   },
-  menuButton: {
+  languageButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 20,
+    minWidth: 60,
+    justifyContent: 'center',
   },
-  menuButtonText: {
+  languageButtonText: {
     color: '#FFFFFF',
-    fontWeight: '600',
-    marginLeft: 5,
+    fontWeight: '700',
+    fontSize: 14,
     marginRight: 3,
   },
   chevron: {
@@ -410,7 +437,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 70,
     right: 15,
-    width: screenWidth * 0.5, // 50% of screen width
+    width: 160,
     backgroundColor: '#FFFFFF',
     borderRadius: 8,
     paddingVertical: 5,
@@ -424,29 +451,33 @@ const styles = StyleSheet.create({
   dropdownItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
   },
   activeDropdownItem: {
-    backgroundColor: '#F5F5F5',
-    borderLeftWidth: 3,
-    borderLeftColor: '#376439',
+    backgroundColor: '#E7F3E8',
   },
-  dropdownItemText: {
+  languageItemText: {
     fontSize: 16,
     color: '#333333',
-    marginLeft: 10,
+    flex: 1,
   },
   activeItemText: {
     color: '#376439',
     fontWeight: '600',
   },
+  checkmark: {
+    fontSize: 18,
+    color: '#376439',
+    fontWeight: 'bold',
+  },
   menuSeparator: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#F5F5F5',
+    height: 1,
+    backgroundColor: '#E0E0E0',
+    marginVertical: 10,
   },
   menuSeparatorText: {
     fontSize: 12,
@@ -469,7 +500,62 @@ const styles = StyleSheet.create({
   menuText: {
     color: '#FFFFFF',
     fontWeight: '600',
-  }
+  },
+  menuButton: {
+    padding: 8,
+    marginLeft: 12,
+  },
+  mainMenu: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    width: 280,
+    backgroundColor: '#376439',
+    paddingTop: 20,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: -2, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  mainMenuHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+    marginBottom: 10,
+  },
+  mainMenuTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  mainMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  mainMenuItemText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+  logoutMenuItem: {
+    borderBottomWidth: 0,
+    marginTop: 5,
+  },
+  logoutText: {
+    fontSize: 16,
+    color: '#FFD700',
+    fontWeight: '600',
+  },
 });
 
 export default AppHeader;

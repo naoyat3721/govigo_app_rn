@@ -22,7 +22,8 @@
         "monochromeImage": "./assets/images/logo_short.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "output": "static",

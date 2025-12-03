@@ -11,6 +11,8 @@ export default ({ config }) => {
       extra: {
         apiUrl: process.env.API_URL,
         webUrl: process.env.WEB_URL,
+        webUrlEn: process.env.WEB_URL_EN,
+        webUrlVn: process.env.WEB_URL_VN,
         downloadUrlMessage: process.env.DOWNLOAD_URL_MESSAGE,
         socketUrl: process.env.SOCKET_URL,
       },

@@ -1,3 +1,4 @@
+import CookieManager from '@react-native-cookies/cookies';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '../models/user';
 import { login as apiLogin, logout as apiLogout, getToken, getUserInfo } from '../services/authService';
@@ -42,7 +43,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               id: userInfo.id,
               name: userInfo.name,
               email: userInfo.mail || userInfo.email,
-              profilePicture: userInfo.profile_picture
+              profilePicture: userInfo.profile_picture,
+              birthDate: userInfo.birth_date,
+              sex: userInfo.sex
             });
             setIsAuthenticated(true);
           } else {
@@ -75,6 +78,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const handleLogin = async (email: string, password: string) => {
     console.log('Context Logging in...');
     try {
+      await CookieManager.clearAll();
+      console.log("✓ All cookies cleared");
       const success = await apiLogin(email, password);
       if (success) {
         await checkAuthState();
