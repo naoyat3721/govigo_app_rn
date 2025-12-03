@@ -15,7 +15,7 @@ class MessageService {
       }
       return [];
     } catch (error) {
-      console.error('Error fetching rooms:', error);
+      console.log('Error fetching rooms:', error);
       // Chỉ log lỗi ra console mà không throw lỗi
       return [];
     }
@@ -32,7 +32,7 @@ class MessageService {
       }
       return [];
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      console.log('Error fetching messages:', error);
       // Chỉ log lỗi ra console mà không throw lỗi
       return [];
     }
@@ -80,11 +80,11 @@ class MessageService {
         return response.data;
       }
 
-      console.error('Failed to send message:', response);
+      console.log('Failed to send message:', response);
       return null;
       
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.log('Error sending message:', error);
       // Chỉ log lỗi ra console mà không throw lỗi
       return null;
     }
@@ -114,10 +114,10 @@ class MessageService {
         return response.data;
       }
 
-      console.error('Failed to edit message:', response);
+      console.log('Failed to edit message:', response);
       return null;
     } catch (error) {
-      console.error('Error editing message:', error);
+      console.log('Error editing message:', error);
       // Chỉ log lỗi ra console mà không throw lỗi
       return null;
     }
@@ -138,10 +138,10 @@ class MessageService {
         return response.data;
       }
 
-      console.error('Failed to delete message:', response);
+      console.log('Failed to delete message:', response);
       return null;
     } catch (error) {
-      console.error('Error deleting message:', error);
+      console.log('Error deleting message:', error);
       // Chỉ log lỗi ra console mà không throw lỗi
       return null;
     }

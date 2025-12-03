@@ -11,7 +11,7 @@ const urlHelper = {
       await Clipboard.setStringAsync(url);
       Alert.alert('Success', 'URL copied to clipboard');
     } catch (error) {
-      console.error('Failed to copy URL:', error);
+      console.log('Failed to copy URL:', error);
       Alert.alert('Error', 'Failed to copy URL to clipboard');
     }
   },
@@ -30,7 +30,7 @@ const urlHelper = {
         Alert.alert('Error', `Cannot open URL: ${url}`);
       }
     } catch (error) {
-      console.error('Failed to open URL:', error);
+      console.log('Failed to open URL:', error);
       Alert.alert('Error', 'Failed to open URL');
     }
   },
@@ -47,7 +47,7 @@ const urlHelper = {
         title: title,
       });
     } catch (error) {
-      console.error('Failed to share URL:', error);
+      console.log('Failed to share URL:', error);
       Alert.alert('Error', 'Failed to share URL');
     }
   },

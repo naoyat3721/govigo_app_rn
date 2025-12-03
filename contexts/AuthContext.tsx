@@ -7,7 +7,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; user?: any }>;
   logout: () => Promise<void>;
   checkAuthState: () => Promise<void>;
 }
@@ -16,7 +16,7 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   user: null,
   loading: true,
-  login: async () => false,
+  login: async () => ({ success: false }),
   logout: async () => {},
   checkAuthState: async () => {},
 });
@@ -63,7 +63,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(null);
       }
     } catch (error) {
-      console.error('Auth check error:', error);
+      console.log('Auth check error:', error);
       setIsAuthenticated(false);
       setUser(null);
     } finally {
@@ -80,15 +80,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       await CookieManager.clearAll();
       console.log("✓ All cookies cleared");
-      const success = await apiLogin(email, password);
-      if (success) {
+      const result = await apiLogin(email, password);
+      if (result.success) {
         await checkAuthState();
-        return true;
+        // Return user data to caller
+        return result;
       }
-      return false;
+      return { success: false };
     } catch (error) {
-      console.error('Login error:', error);
-      return false;
+      console.log('Login error:', error);
+      return { success: false };
     }
   };
 
@@ -98,7 +99,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsAuthenticated(false);
       setUser(null);
     } catch (error) {
-      console.error('Logout error:', error);
+      console.log('Logout error:', error);
     }
   };
 

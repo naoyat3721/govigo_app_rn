@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import CookieManager from '@react-native-cookies/cookies';
 import Constants from 'expo-constants';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -17,7 +16,7 @@ import AppHeader from '../../components/AppHeader';
 import BottomTabBar from '../../components/BottomTabBar';
 import { useAuth } from '../../contexts/AuthContext';
 import { useWebView } from '../../contexts/WebViewContext';
-import { getSessionInfo, getToken } from '../../services/authService';
+import { getToken } from '../../services/authService';
 
 export default function MainScreen() {
   const params = useLocalSearchParams();
@@ -25,6 +24,7 @@ export default function MainScreen() {
   const [currentTab, setCurrentTab] = useState(params.tab || 'home');
   const [customUrl, setCustomUrl] = useState(params.url || null);
   const [url, setUrl] = useState('');
+  const isLoggingOutRef = useRef(false);
   const webviewRef = useRef(null);
   const router = useRouter();
   const { isAuthenticated, logout, loading: authLoading } = useAuth();
@@ -83,57 +83,33 @@ export default function MainScreen() {
         throw new Error('No auth token found');
       }
 
-      // Get stored session info from login
-      const sessionInfo = await getSessionInfo();
-      console.log('Session info from storage:', sessionInfo);
+      // Extract current domain from webViewUrl
+      const currentDomain = webViewUrl.replace('https://', '').replace('http://', '');
+      console.log('Current language domain:', currentDomain);
 
-      if (sessionInfo && sessionInfo.session_id) {
-        const { session_id, session_name, cookie_domain } = sessionInfo;
-        console.log('session info', sessionInfo)
+      // Call autologin API for the current language domain to set session cookie
+      const autologinUrl = `${webViewUrl}/api/autologin.php`;
+      console.log(`Calling autologin API: ${autologinUrl}`);
+
+      try {
+        const response = await fetch(autologinUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        const result = await response.json();
         
-        const cookieData = {
-          name: session_name || 'PHPSESSID',
-          value: session_id,
-          domain: cookie_domain || '.dev.govigolf.com',
-          path: '/',
-          expires: new Date(Date.now() + 86400000).toUTCString(), // 24 hours
-        };
-
-        console.log('Injecting cookie:', cookieData);
-
-        // Determine domains based on environment
-        let domains = [];
-        if (cookie_domain.includes('dev.govigolf.com')) {
-          domains = ['dev.govigolf.com', 'en.dev.govigolf.com', 'vn.dev.govigolf.com'];
-        } else if (cookie_domain.includes('govigolf.com')) {
-          domains = ['govigolf.com', 'en.govigolf.com', 'vn.govigolf.com'];
+        if (result.success) {
+          console.log(`✓ Autologin successful for ${currentDomain}`);
+          console.log('Session info:', result.session);
+        } else {
+          console.warn(`⚠️ Autologin failed for ${currentDomain}:`, result.message);
         }
-
-        // Set cookie for all language domains
-        for (const domain of domains) {
-          const url = `https://${domain}`;
-          console.log('domain', domain, cookieData)
-          try {
-            await CookieManager.set(url, cookieData);
-            console.log(`✓ Cookie set for ${domain}`);
-          } catch (error) {
-            console.error(`✗ Failed to set cookie for ${domain}:`, error);
-          }
-           CookieManager.get(url).then(cookie => console.log("cookies:", cookie));
-
-        }
-       
-        // Flush cookies to ensure they're saved
-        try {
-          await CookieManager.flush();
-          console.log('✓ Cookies flushed to storage');
-        } catch (error) {
-          console.warn('⚠️ Could not flush cookies:', error.message);
-        }
-
-        console.log('✓ Session cookies injected');
-      } else {
-        console.warn('⚠️ No session info available - cookies not injected');
+      } catch (error) {
+        console.log(`✗ Autologin API error for ${currentDomain}:`, error);
       }
 
       // Load custom URL from menu if provided, otherwise use current tab's URL
@@ -144,7 +120,7 @@ export default function MainScreen() {
       setIsLoading(false);
 
     } catch (error) {
-      console.error('Error preparing WebView:', error);
+      console.log('Error preparing WebView:', error);
       const fallbackUrl = customUrl || `${webViewUrl}${tabs[currentTab].path}`;
       setUrl(fallbackUrl);
       setIsLoading(false);
@@ -173,13 +149,44 @@ export default function MainScreen() {
               await logout();
               router.replace('/screens/LoginScreen');
             } catch (error) {
-              console.error('Logout error:', error);
+              console.log('Logout error:', error);
               Alert.alert('Error', 'Failed to logout. Please try again.');
             }
           }
         }
       ]
     );
+  };
+
+  // Handle navigation state changes to detect login redirects
+  const handleNavigationStateChange = async (navState) => {
+    const { url: currentUrl } = navState;
+    console.log('WebView navigated to:', currentUrl);
+    
+    // Check if already logging out to prevent loop
+    if (isLoggingOutRef.current) {
+      console.log('Already logging out - ignoring redirect');
+      return;
+    }
+    
+    // Check if redirected to login page (session expired)
+    if (currentUrl && (currentUrl.includes('/login_form.php') || currentUrl.includes('/login.php'))) {
+      console.warn('⚠️ Redirected to login page - session expired or invalid');
+      
+      // Set flag to prevent multiple logout attempts
+      isLoggingOutRef.current = true;
+      
+      // Logout and redirect directly without alert
+      try {
+        console.log('Auto-logging out user...');
+        await logout();
+        router.replace('/screens/LoginScreen');
+      } catch (error) {
+        console.log('Auto-logout error:', error);
+        // Reset flag if logout fails
+        isLoggingOutRef.current = false;
+      }
+    }
   };
 
   const hideHeaderFooter = `
@@ -235,10 +242,11 @@ export default function MainScreen() {
           source={{ uri: url }}
           injectedJavaScript={hideHeaderFooter}
           onLoadStart={() => setIsLoading(true)}
-          onLoadEnd={() => {
+          onLoadEnd={(event) => {
             setIsLoading(false);
             webviewRef.current?.injectJavaScript(hideHeaderFooter);
           }}
+          onNavigationStateChange={handleNavigationStateChange}
           onMessage={(event) => {
             console.log('WebView message:', event.nativeEvent.data);
           }}
