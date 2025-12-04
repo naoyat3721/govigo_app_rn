@@ -142,7 +142,7 @@ export default function DetailMessageScreen() {
       setHasMore(messagesData && messagesData.length > 0);
 
     } catch (error) {
-      console.error('Failed to load messages:', error);
+      console.log('Failed to load messages:', error);
     } finally {
       setIsLoading(false);
       isLoadingRef.current = false;
@@ -177,7 +177,7 @@ export default function DetailMessageScreen() {
           setCurrentPage(nextPage);
         }
       } catch (error) {
-        console.error('Failed to load more messages:', error);
+        console.log('Failed to load more messages:', error);
         setHasMore(false);
       } finally {
         setIsLoadingMore(false);
@@ -217,7 +217,7 @@ export default function DetailMessageScreen() {
       // Let onContentSizeChange handle the scrolling - this is smoother
       // than manually calling scrollToEnd here
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.log('Failed to send message:', error);
 
       // Restore state if sending fails
       setMessageText(messageToSend);
@@ -263,7 +263,7 @@ export default function DetailMessageScreen() {
         );
       }
     } catch (error) {
-      console.error('Failed to edit message:', error);
+      console.log('Failed to edit message:', error);
       Alert.alert('Error', 'Failed to edit message. Please try again.');
     }
   };
@@ -296,7 +296,7 @@ export default function DetailMessageScreen() {
                 prevMessages.filter(msg => msg.id !== message.id)
               );
             } catch (error) {
-              console.error('Failed to delete message:', error);
+              console.log('Failed to delete message:', error);
             }
           }
         }
@@ -324,7 +324,7 @@ export default function DetailMessageScreen() {
         setSelectedAttachments(prev => [...prev, ...newAttachments]);
       }
     } catch (error) {
-      console.error('Error picking documents:', error);
+      console.log('Error picking documents:', error);
     }
   };
 

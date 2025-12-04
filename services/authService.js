@@ -38,7 +38,7 @@ const isTokenExpired = (token) => {
     
     return isExpired;
   } catch (error) {
-    console.error('Error checking token expiration:', error);
+    console.log('Error checking token expiration:', error);
     return true; // Consider tokens that can't be parsed as expired
   }
 };
@@ -48,7 +48,7 @@ const storeToken = async (token) => {
   try {
     await SecureStore.setItemAsync('auth_token', token);
   } catch (error) {
-    console.error('Error storing auth token', error);
+    console.log('Error storing auth token', error);
     throw error;
   }
 };
@@ -58,7 +58,7 @@ const storeSessionInfo = async (sessionInfo) => {
   try {
     await SecureStore.setItemAsync('session_info', JSON.stringify(sessionInfo));
   } catch (error) {
-    console.error('Error storing session info', error);
+    console.log('Error storing session info', error);
     throw error;
   }
 };
@@ -72,7 +72,7 @@ export const getSessionInfo = async () => {
     }
     return JSON.parse(sessionInfoStr);
   } catch (error) {
-    console.error('Error getting session info', error);
+    console.log('Error getting session info', error);
     return null;
   }
 };
@@ -82,7 +82,7 @@ const removeSessionInfo = async () => {
   try {
     await SecureStore.deleteItemAsync('session_info');
   } catch (error) {
-    console.error('Error removing session info', error);
+    console.log('Error removing session info', error);
   }
 };
 
@@ -107,7 +107,7 @@ export const getToken = async () => {
     
     return token;
   } catch (error) {
-    console.error('Error getting auth token', error);
+    console.log('Error getting auth token', error);
     redirectToLogin();
     return null;
   }
@@ -122,7 +122,7 @@ const redirectToLogin = () => {
       const router = require('expo-router');
       router.router.replace('/screens/LoginScreen');
     } catch (error) {
-      console.error('Failed to redirect to login:', error);
+      console.log('Failed to redirect to login:', error);
     }
   }, 0);
 };
@@ -134,7 +134,7 @@ export const removeToken = async () => {
     await removeSessionInfo(); // Also remove session info
     return true;
   } catch (error) {
-    console.error('Error removing auth token', error);
+    console.log('Error removing auth token', error);
     return false;
   }
 };
@@ -155,12 +155,16 @@ export async function login(email, password) {
         console.log('Session info stored:', response.data.session);
       }
       
-      return true;
+      // Return user data including language preference
+      return {
+        success: true,
+        user: response.data.user
+      };
     }
-    return false;
+    return { success: false };
   } catch (error) {
-    console.error('Login error:', error);
-    return false;
+    console.log('Login error:', error);
+    return { success: false };
   }
 }
 
@@ -183,7 +187,7 @@ export async function getUserInfo() {
     }
     return userInfo.data.profile;
   } catch (error) {
-    console.error('Get user info error:', error);
+    console.log('Get user info error:', error);
     
     // Check if this is an authentication error
     if (error.response && (error.response.status === 401 || error.response.status === 403)) {
@@ -216,7 +220,7 @@ export async function autoLogin() {
     redirectToLogin();
     return null;
   } catch (error) {
-    console.error('Auto login error:', error);
+    console.log('Auto login error:', error);
     await removeToken(); // Remove potentially invalid token
     redirectToLogin();
     return null;

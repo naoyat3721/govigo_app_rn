@@ -2,14 +2,14 @@ import { format } from 'date-fns';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    FlatList,
+    Image,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppHeader from '../../components/AppHeader';
@@ -87,7 +87,7 @@ export default function MessageScreen() {
       }
     } catch (error) {
       // Chỉ log lỗi ra console, không hiển thị thông báo lỗi
-      console.error('Failed to load rooms:', error);
+      console.log('Failed to load rooms:', error);
       setRooms([]);
       setHasMore(false);
     } finally {
@@ -114,7 +114,7 @@ export default function MessageScreen() {
       }
     } catch (error) {
       // Chỉ log lỗi ra console, không hiển thị thông báo lỗi
-      console.error('Failed to load more rooms:', error);
+      console.log('Failed to load more rooms:', error);
       setHasMore(false); // Stop trying on error
     } finally {
       setIsLoadingMore(false);

@@ -46,7 +46,7 @@ export const SocketProvider = ({ children }) => {
       };
 
       const onConnectError = (err) => {
-        console.error('Socket connection error:', err.message);
+        console.log('Socket connection error:', err.message);
         setConnected(false);
       };
 
@@ -120,7 +120,7 @@ export const SocketProvider = ({ children }) => {
       console.log('Registered to room:', sourceName);
       return true;
     } catch (error) {
-      console.error('Error registering to room:', error);
+      console.log('Error registering to room:', error);
       return false;
     }
   }, [socket, connected]);
@@ -145,7 +145,7 @@ export const SocketProvider = ({ children }) => {
       console.log('Socket message sent:', action);
       return true;
     } catch (error) {
-      console.error('Error sending socket message:', error);
+      console.log('Error sending socket message:', error);
       return false;
     }
   }, [socket, connected]);

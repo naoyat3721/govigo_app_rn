@@ -6,6 +6,7 @@ import AppFooter from '../../components/AppFooter';
 import AppHeader from '../../components/AppHeader';
 import CustomButton from '../../components/CustomButton';
 import { useAuth } from '../../contexts/AuthContext';
+import { useWebView } from '../../contexts/WebViewContext';
 import { getFCMToken, requestUserPermission } from '../../services/notificationService';
 
 
@@ -15,6 +16,7 @@ export default function LoginScreen() {
   const [localLoading, setLocalLoading] = useState(false);
   const router = useRouter();
   const { login, loading: authLoading, isAuthenticated } = useAuth();
+  const { changeLanguage } = useWebView();
   
   // Use either the local loading state or the auth context loading state
   const isLoading = localLoading || authLoading;
@@ -50,10 +52,19 @@ export default function LoginScreen() {
       setLocalLoading(true);
       console.log('Logging in...');
       
-      const success = await login(email, password);
+      const result = await login(email, password);
       setLocalLoading(false);
       
-      if (success) {
+      if (result.success) {
+        // Set language based on user preference
+        // 0 = Japanese, 1 = English, 2 = Vietnamese
+        if (result.user && typeof result.user.language !== 'undefined') {
+          const languageMap = { 0: 'jp', 1: 'en', 2: 'vn' };
+          const userLanguage = languageMap[result.user.language] || 'jp';
+          console.log(`Setting user language: ${userLanguage} (${result.user.language})`);
+          changeLanguage(userLanguage);
+        }
+        
         router.replace('/screens/MainScreen');
       } else {
         Alert.alert('Login fail', 'Wrong email or password');
@@ -62,19 +73,6 @@ export default function LoginScreen() {
       setLocalLoading(false);
       Alert.alert('Login failed', error.message || 'Unable to connect to server');
     }
-  };
-
-  const sendTestNotification = () => {
-    console.log('Simulating sending a push notification...');
-    const message = {
-      notification: {
-        title: 'Test Notification',
-        body: 'This is a test push message!',
-      },
-      token: 'YOUR_DEVICE_FCM_TOKEN',
-    };
-    console.log('Sample message payload:', message);
-    Alert.alert('Test Notification', 'Check the console for the sample message payload.');
   };
 
   return (
@@ -103,7 +101,6 @@ export default function LoginScreen() {
           <>
             <CustomButton title="Login" onPress={submitLogin} />
             <View style={{ marginTop: 10 }} />
-            <CustomButton title="Send Test Notification" onPress={sendTestNotification} />
           </>
         )}
       </View>
